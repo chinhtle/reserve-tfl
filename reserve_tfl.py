@@ -34,7 +34,7 @@ NUM_THREADS = 1
 THREAD_DELAY_SEC = 1
 RESERVATION_FOUND = False
 
-# Time between each page refresh
+# Time between each page refresh in milliseconds. Decrease this time to increase the number of reservation attempts
 REFRESH_DELAY_MSEC = 1000
 
 # Chrome extension configurations that are used with Luminati.io proxy. Enable proxy to avoid getting IP banned.
@@ -63,47 +63,47 @@ MONTH_NUM = {
 }
 
 
-class TestReserve():
-  def setup(self):
-    options = Options()
-    if ENABLE_PROXY:
-        options.add_argument('--load-extension={}'.format(EXTENSION_PATH))
-        options.add_argument('--user-data-dir={}'.format(USER_DATA_DIR))
-        options.add_argument('--profile-directory=Default')
+class ReserveTFL():
+    def setup(self):
+        options = Options()
+        if ENABLE_PROXY:
+            options.add_argument('--load-extension={}'.format(EXTENSION_PATH))
+            options.add_argument('--user-data-dir={}'.format(USER_DATA_DIR))
+            options.add_argument('--profile-directory=Default')
 
-    self.driver = webdriver.Chrome(options=options)
-    self.vars = {}
+        self.driver = webdriver.Chrome(options=options)
+        self.vars = {}
 
-  def teardown(self):
-    self.driver.quit()
+    def teardown(self):
+        self.driver.quit()
 
-  def reserve(self):
-    global RESERVATION_FOUND
-    print("Looking for availability on month: %s, days: %s, between times: %s and %s" % (RESERVATION_MONTH, RESERVATION_DAYS, RESERVATION_TIME_MIN, RESERVATION_TIME_MAX))
+    def reserve(self):
+        global RESERVATION_FOUND
+        print("Looking for availability on month: %s, days: %s, between times: %s and %s" % (RESERVATION_MONTH, RESERVATION_DAYS, RESERVATION_TIME_MIN, RESERVATION_TIME_MAX))
 
-    if ENABLE_LOGIN:
-        self.login_tock()
+        if ENABLE_LOGIN:
+            self.login_tock()
 
-    while True and RESERVATION_FOUND == False:
-        time.sleep(REFRESH_DELAY_MSEC / 1000)
-        self.driver.get("https://www.exploretock.com/tfl/search?date=2019-%s-02&size=%s&time=%s" % (month_num(RESERVATION_MONTH), RESERVATION_SIZE, "22%3A00"))
-        WebDriverWait(self.driver, 3000).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "div.ConsumerCalendar-month")))
+        while True and RESERVATION_FOUND == False:
+            time.sleep(REFRESH_DELAY_MSEC / 1000)
+            self.driver.get("https://www.exploretock.com/tfl/search?date=2019-%s-02&size=%s&time=%s" % (month_num(RESERVATION_MONTH), RESERVATION_SIZE, "22%3A00"))
+            WebDriverWait(self.driver, 3000).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "div.ConsumerCalendar-month")))
 
-        monthObject = None
+            monthObject = None
 
-        if not self.search_month():
-            print("No available days found. Continuing next search iteration")
-            continue
+            if not self.search_month():
+                print("No available days found. Continuing next search iteration")
+                continue
 
-        WebDriverWait(self.driver, 3000).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "button.Consumer-resultsListItem.is-available")))
+            WebDriverWait(self.driver, 3000).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "button.Consumer-resultsListItem.is-available")))
 
-        if not self.search_time():
-            print("Time not found. Continuing next search iteration")
-            continue
+            if not self.search_time():
+                print("Time not found. Continuing next search iteration")
+                continue
 
-        print("Found availability. Sleeping for 10 minutes to complete reservation...")
-        RESERVATION_FOUND = True
-        time.sleep(BROWSER_CLOSE_DELAY_SEC)
+            print("Found availability. Sleeping for 10 minutes to complete reservation...")
+            RESERVATION_FOUND = True
+            time.sleep(BROWSER_CLOSE_DELAY_SEC)
 
     def login_tock(self):
         self.driver.get("https://www.exploretock.com/tfl/login")
@@ -162,7 +162,7 @@ def month_num(month):
 
 
 def run_reservation():
-    t = TestReserve()
+    t = ReserveTFL()
     t.setup()
     t.reserve()
     t.teardown()
