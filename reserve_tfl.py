@@ -37,7 +37,8 @@ RESERVATION_FOUND = False
 # Time between each page refresh
 REFRESH_DELAY_MSEC = 1000
 
-# Chrome extension configurations that are used with Luminati.io proxy
+# Chrome extension configurations that are used with Luminati.io proxy. Enable proxy to avoid getting IP banned.
+ENABLE_PROXY = False
 USER_DATA_DIR = '~/Library/Application Support/Google/Chrome'
 PROFILE_DIR = 'Default'
 # https://chrome.google.com/webstore/detail/luminati/efohiadmkaogdhibjbmeppjpebenaool
@@ -65,9 +66,11 @@ MONTH_NUM = {
 class TestReserve():
   def setup(self):
     options = Options()
-    options.add_argument('--load-extension={}'.format(EXTENSION_PATH))
-    options.add_argument('--user-data-dir={}'.format(USER_DATA_DIR))
-    options.add_argument('--profile-directory=Default')
+    if ENABLE_PROXY:
+        options.add_argument('--load-extension={}'.format(EXTENSION_PATH))
+        options.add_argument('--user-data-dir={}'.format(USER_DATA_DIR))
+        options.add_argument('--profile-directory=Default')
+
     self.driver = webdriver.Chrome(options=options)
     self.vars = {}
 
