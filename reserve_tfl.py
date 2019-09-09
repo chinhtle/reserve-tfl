@@ -13,8 +13,8 @@ TOCK_USERNAME = "SET_YOUR_USER_NAME_HERE"
 TOCK_PASSWORD = "SET_YOUR_PASSWORD_HERE"
 
 # Set your specific reservation month and days
-RESERVATION_MONTH = 'November'
-RESERVATION_DAYS = ['1', '2', '8', '9', '15', '16', '22', '23']
+RESERVATION_MONTH = 'October'
+RESERVATION_DAYS = ['5', '6', '12', '13', '19', '20', '26', '27']
 RESERVATION_TIME_FORMAT = "%I:%M %p"
 
 # Set the time range for acceptable reservation times.
@@ -25,7 +25,7 @@ RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
 RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
 
 # Set the party size for the reservation
-RESERVATION_SIZE = 2
+RESERVATION_SIZE = 4
 
 # Multithreading configurations
 NUM_THREADS = 1
@@ -34,7 +34,7 @@ RESERVATION_FOUND = False
 
 # Time between each page refresh in milliseconds. Decrease this time to
 # increase the number of reservation attempts
-REFRESH_DELAY_MSEC = 1000
+REFRESH_DELAY_MSEC = 250
 
 # Chrome extension configurations that are used with Luminati.io proxy.
 # Enable proxy to avoid getting IP banned.
@@ -96,10 +96,6 @@ class ReserveTFL():
 
             WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "button.Consumer-resultsListItem.is-available")))
 
-            if not self.search_time():
-                print("Time not found. Continuing next search iteration")
-                continue
-
             print("Found availability. Sleeping for 10 minutes to complete reservation...")
             RESERVATION_FOUND = True
             time.sleep(BROWSER_CLOSE_DELAY_SEC)
@@ -135,7 +131,10 @@ class ReserveTFL():
             if span.text in RESERVATION_DAYS:
                 print("Day %s found. Clicking button" % span.text)
                 day.click()
-                return True
+
+                if self.search_time():
+                    print("Time found")
+                    return True
 
         return False
 
