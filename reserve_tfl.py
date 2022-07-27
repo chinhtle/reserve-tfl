@@ -54,18 +54,18 @@ BROWSER_CLOSE_DELAY_SEC = 600
 WEBDRIVER_TIMEOUT_DELAY_MS = 3000
 
 MONTH_NUM = {
-    'january':   1,
-    'february':  2,
-    'march':     3,
-    'april':     4,
-    'may':       5,
-    'june':      6,
-    'july':      7,
-    'august':    8,
-    'september': 9,
-    'october':   10,
-    'november':  11,
-    'december':  12
+    'january':   '01',
+    'february':  '02',
+    'march':     '03',
+    'april':     '04',
+    'may':       '05',
+    'june':      '06',
+    'july':      '07',
+    'august':    '08',
+    'september': '09',
+    'october':   '10',
+    'november':  '11',
+    'december':  '12'
 }
 
 
