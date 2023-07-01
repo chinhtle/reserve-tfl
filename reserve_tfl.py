@@ -9,25 +9,28 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
 # Login not required for Tock. Leave it as false to decrease reservation delay
-ENABLE_LOGIN = False
-TOCK_USERNAME = "SET_YOUR_USER_NAME_HERE"
-TOCK_PASSWORD = "SET_YOUR_PASSWORD_HERE"
+ENABLE_LOGIN = True
+TOCK_USERNAME = "your_email"
+TOCK_PASSWORD = "your_password"
+
+# The name of the restaurant as shown in tock urls ex "https://www.exploretock.com/hayato"
+RESTAURANT = 'hayato'
 
 # Set your specific reservation month and days
-RESERVATION_MONTH = 'November'
-RESERVATION_DAYS = ['23', '24', '25']
-RESERVATION_YEAR = '2021'
+RESERVATION_MONTH = 'August'
+RESERVATION_DAYS = ['5', '6', '26' '27']
+RESERVATION_YEAR = '2023'
 RESERVATION_TIME_FORMAT = "%I:%M %p"
 
 # Set the time range for acceptable reservation times.
 # I.e., any available slots between 5:00 PM and 8:30 PM
-EARLIEST_TIME = "3:00 PM"
-LATEST_TIME = "8:30 PM"
+EARLIEST_TIME = "5:00 PM"
+LATEST_TIME = "10:00 PM"
 RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
 RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
 
 # Set the party size for the reservation
-RESERVATION_SIZE = 4
+RESERVATION_SIZE = 2
 
 # Multithreading configurations
 NUM_THREADS = 1
@@ -36,16 +39,18 @@ RESERVATION_FOUND = False
 
 # Time between each page refresh in milliseconds. Decrease this time to
 # increase the number of reservation attempts
-REFRESH_DELAY_MSEC = 500
+REFRESH_DELAY_MSEC = 200
 
-# Chrome extension configurations that are used with Luminati.io proxy.
+# Chrome extension configurations that are used with Luminati.io proxy (now called Bright Data).
 # Enable proxy to avoid getting IP potentially banned. This should be enabled only if the REFRESH_DELAY_MSEC
 # is extremely low (sub hundred) and NUM_THREADS > 1.
 ENABLE_PROXY = False
-USER_DATA_DIR = '~/Library/Application Support/Google/Chrome'
+# This is formatted for windows -> either way this should be the path to your google chrome profile directory
+USER_DATA_DIR = 'C:/Users/your_username/AppData/Local/Google/Chrome/User Data/'
 PROFILE_DIR = 'Default'
 # https://chrome.google.com/webstore/detail/luminati/efohiadmkaogdhibjbmeppjpebenaool
-EXTENSION_PATH = USER_DATA_DIR + '/' + PROFILE_DIR + '/Extensions/efohiadmkaogdhibjbmeppjpebenaool/1.149.316_0'
+# Chrome extension for Luminati/Bright Data
+EXTENSION_PATH = USER_DATA_DIR + '/' + PROFILE_DIR + '/Extensions/efohiadmkaogdhibjbmeppjpebenaool/1.370.148_0'
 
 # Delay for how long the browser remains open so that the reservation can be finalized. Tock holds the reservation
 # for 10 minutes before releasing.
@@ -69,12 +74,13 @@ MONTH_NUM = {
 }
 
 
+
 class ReserveTFL():
     def __init__(self):
-        options = Options()
+        options = webdriver.ChromeOptions()
         if ENABLE_PROXY:
-            options.add_argument('--load-extension={}'.format(EXTENSION_PATH))
-            options.add_argument('--user-data-dir={}'.format(USER_DATA_DIR))
+            options.add_argument('--load-extension=' + EXTENSION_PATH)
+            options.add_argument('--user-data-dir=' + USER_DATA_DIR)
             options.add_argument('--profile-directory=Default')
 
         self.driver = webdriver.Chrome(options=options)
@@ -91,7 +97,7 @@ class ReserveTFL():
 
         while not RESERVATION_FOUND:
             time.sleep(REFRESH_DELAY_MSEC / 1000)
-            self.driver.get("https://www.exploretock.com/tfl/search?date=%s-%s-02&size=%s&time=%s" % (RESERVATION_YEAR, month_num(RESERVATION_MONTH), RESERVATION_SIZE, "22%3A00"))
+            self.driver.get("https://www.exploretock.com/" + RESTAURANT + "/search?date=%s-%s-02&size=%s&time=%s" % (RESERVATION_YEAR, month_num(RESERVATION_MONTH), RESERVATION_SIZE, "22%3A00"))
             WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "div.ConsumerCalendar-month")))
 
             if not self.search_month():
@@ -105,12 +111,14 @@ class ReserveTFL():
             time.sleep(BROWSER_CLOSE_DELAY_SEC)
 
     def login_tock(self):
-        self.driver.get("https://www.exploretock.com/tfl/login")
+        self.driver.get("https://www.exploretock.com/" + RESTAURANT + "/login")
         WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.NAME, "email")))
         self.driver.find_element(By.NAME, "email").send_keys(TOCK_USERNAME)
         self.driver.find_element(By.NAME, "password").send_keys(TOCK_PASSWORD)
-        self.driver.find_element(By.CSS_SELECTOR, ".Button").click()
-        WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, ".MainHeader-accountName")))
+        # Old css selector no longer working
+        self.driver.find_element(By.CSS_SELECTOR, ".MuiButton-fullWidth").click()
+        # Checks for profile image css selector -> maybe not the best check but it works
+        WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, ".css-118lam2")))
 
     def search_month(self):
         month_object = None
