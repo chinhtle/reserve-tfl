@@ -1,6 +1,6 @@
 import threading
 import time
-
+import json
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -8,26 +8,41 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
+
+file_path = './reservation_details.json'
+
+# Open the JSON file and load its content into a Python dictionary
+with open(file_path, 'r') as file:
+    data = json.load(file)
+    
+# Extract variables
+RESERVATION_DAYS = data['reservation-days']
+RESERVATION_MONTH = data['reservation-month']
+RESERVATION_YEAR = data['reservation-year']
+RESERVATION_SIZE = data['reservation-size']
+TODAY_DATE = data['date-today']
+EXPERIENCE = data['experience']
+EARLIEST_TIME = data['earliest-time']
+LATEST_TIME = data['latest-time']
+RESERVATION_TIME_FORMAT = "%I:%M %p"
+RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
+RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
+RESTAURANT = data['restaurant']
+
+# Create a formatted print statement
+print(f"""Reservation Summary:
+- Date: {RESERVATION_DAYS} {RESERVATION_MONTH}, {RESERVATION_YEAR}
+- Party Size: {RESERVATION_SIZE}
+- Today's Date: {TODAY_DATE}
+- Experience: {EXPERIENCE}
+- Time Slot: From {EARLIEST_TIME} to {LATEST_TIME} (Check the times between this window)
+- Restaurant: {RESTAURANT}
+""")
+
 # Login not required for Tock. Leave it as false to decrease reservation delay
 ENABLE_LOGIN = False
 TOCK_USERNAME = "SET_YOUR_USER_NAME_HERE"
 TOCK_PASSWORD = "SET_YOUR_PASSWORD_HERE"
-
-# Set your specific reservation month and days
-RESERVATION_MONTH = 'November'
-RESERVATION_DAYS = ['23', '24', '25']
-RESERVATION_YEAR = '2021'
-RESERVATION_TIME_FORMAT = "%I:%M %p"
-
-# Set the time range for acceptable reservation times.
-# I.e., any available slots between 5:00 PM and 8:30 PM
-EARLIEST_TIME = "3:00 PM"
-LATEST_TIME = "8:30 PM"
-RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
-RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
-
-# Set the party size for the reservation
-RESERVATION_SIZE = 4
 
 # Multithreading configurations
 NUM_THREADS = 1
@@ -51,23 +66,7 @@ EXTENSION_PATH = USER_DATA_DIR + '/' + PROFILE_DIR + '/Extensions/efohiadmkaogdh
 # for 10 minutes before releasing.
 BROWSER_CLOSE_DELAY_SEC = 600
 
-WEBDRIVER_TIMEOUT_DELAY_MS = 3000
-
-MONTH_NUM = {
-    'january':   '01',
-    'february':  '02',
-    'march':     '03',
-    'april':     '04',
-    'may':       '05',
-    'june':      '06',
-    'july':      '07',
-    'august':    '08',
-    'september': '09',
-    'october':   '10',
-    'november':  '11',
-    'december':  '12'
-}
-
+WEBDRIVER_TIMEOUT_DELAY_MS = 120000
 
 class ReserveTFL():
     def __init__(self):
@@ -91,7 +90,8 @@ class ReserveTFL():
 
         while not RESERVATION_FOUND:
             time.sleep(REFRESH_DELAY_MSEC / 1000)
-            self.driver.get("https://www.exploretock.com/tfl/search?date=%s-%s-02&size=%s&time=%s" % (RESERVATION_YEAR, month_num(RESERVATION_MONTH), RESERVATION_SIZE, "22%3A00"))
+            url = f"https://www.exploretock.com/{RESTAURANT}/experience/450847/{EXPERIENCE}?date=2024-{RESERVATION_MONTH}-{TODAY_DATE}&size={RESERVATION_SIZE}&time=12%3A00"
+            self.driver.get(url)
             WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "div.ConsumerCalendar-month")))
 
             if not self.search_month():
@@ -105,7 +105,7 @@ class ReserveTFL():
             time.sleep(BROWSER_CLOSE_DELAY_SEC)
 
     def login_tock(self):
-        self.driver.get("https://www.exploretock.com/tfl/login")
+        self.driver.get("https://www.exploretock.com/hong-shing-toronto/login")
         WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.NAME, "email")))
         self.driver.find_element(By.NAME, "email").send_keys(TOCK_USERNAME)
         self.driver.find_element(By.NAME, "password").send_keys(TOCK_PASSWORD)
@@ -117,7 +117,7 @@ class ReserveTFL():
 
         for month in self.driver.find_elements(By.CSS_SELECTOR, "div.ConsumerCalendar-month"):
             header = month.find_element(By.CSS_SELECTOR, "div.ConsumerCalendar-monthHeading")
-            span = header.find_element(By.CSS_SELECTOR, "span.H1")
+            span = header.find_element(By.CSS_SELECTOR, "span")
             print("Encountered month", span.text)
 
             if RESERVATION_MONTH in span.text:
@@ -130,7 +130,7 @@ class ReserveTFL():
             return False
 
         for day in month_object.find_elements(By.CSS_SELECTOR, "button.ConsumerCalendar-day.is-in-month.is-available"):
-            span = day.find_element(By.CSS_SELECTOR, "span.B2")
+            span = day.find_element(By.CSS_SELECTOR, "span")
             print("Encountered day: " + span.text)
             if span.text in RESERVATION_DAYS:
                 print("Day %s found. Clicking button" % span.text)
@@ -157,11 +157,6 @@ class ReserveTFL():
         return False
 
 
-def month_num(month):
-    # TODO error handling
-    return MONTH_NUM[month.lower()]
-
-
 def run_reservation():
     r = ReserveTFL()
     r.reserve()
@@ -183,6 +178,5 @@ def execute_reservations():
 def continuous_reservations():
     while True:
         execute_reservations()
-
-
+        
 continuous_reservations()
