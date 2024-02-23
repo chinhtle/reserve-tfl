@@ -29,21 +29,6 @@ RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
 RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
 RESTAURANT = data['restaurant']
 
-# Create a formatted print statement
-print(f"""Reservation Summary:
-- Date: {RESERVATION_DAYS} {RESERVATION_MONTH}, {RESERVATION_YEAR}
-- Party Size: {RESERVATION_SIZE}
-- Today's Date: {TODAY_DATE}
-- Experience: {EXPERIENCE}
-- Time Slot: From {EARLIEST_TIME} to {LATEST_TIME} (Check the times between this window)
-- Restaurant: {RESTAURANT}
-""")
-
-# Login not required for Tock. Leave it as false to decrease reservation delay
-ENABLE_LOGIN = False
-TOCK_USERNAME = "SET_YOUR_USER_NAME_HERE"
-TOCK_PASSWORD = "SET_YOUR_PASSWORD_HERE"
-
 # Multithreading configurations
 NUM_THREADS = 1
 THREAD_DELAY_SEC = 1
@@ -68,7 +53,7 @@ BROWSER_CLOSE_DELAY_SEC = 600
 
 WEBDRIVER_TIMEOUT_DELAY_MS = 120000
 
-class ReserveTFL():
+class reserveOnTock():
     def __init__(self):
         options = Options()
         if ENABLE_PROXY:
@@ -85,9 +70,6 @@ class ReserveTFL():
         global RESERVATION_FOUND
         print("Looking for availability on month: %s, days: %s, between times: %s and %s" % (RESERVATION_MONTH, RESERVATION_DAYS, EARLIEST_TIME, LATEST_TIME))
 
-        if ENABLE_LOGIN:
-            self.login_tock()
-
         while not RESERVATION_FOUND:
             time.sleep(REFRESH_DELAY_MSEC / 1000)
             url = f"https://www.exploretock.com/{RESTAURANT}/experience/450847/{EXPERIENCE}?date=2024-{RESERVATION_MONTH}-{TODAY_DATE}&size={RESERVATION_SIZE}&time=12%3A00"
@@ -103,14 +85,6 @@ class ReserveTFL():
             print("Found availability. Sleeping for 10 minutes to complete reservation...")
             RESERVATION_FOUND = True
             time.sleep(BROWSER_CLOSE_DELAY_SEC)
-
-    def login_tock(self):
-        self.driver.get("https://www.exploretock.com/hong-shing-toronto/login")
-        WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.NAME, "email")))
-        self.driver.find_element(By.NAME, "email").send_keys(TOCK_USERNAME)
-        self.driver.find_element(By.NAME, "password").send_keys(TOCK_PASSWORD)
-        self.driver.find_element(By.CSS_SELECTOR, ".Button").click()
-        WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, ".MainHeader-accountName")))
 
     def search_month(self):
         month_object = None
@@ -158,7 +132,7 @@ class ReserveTFL():
 
 
 def run_reservation():
-    r = ReserveTFL()
+    r = reserveOnTock()
     r.reserve()
     r.teardown()
 
@@ -179,4 +153,6 @@ def continuous_reservations():
     while True:
         execute_reservations()
         
-continuous_reservations()
+
+if __name__ == '__main__':
+    continuous_reservations()
