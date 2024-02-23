@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import json
 import subprocess
+import reserve_tfl
 
 # Function to save data to JSON and call another script
 def save_data_and_call_script(data):
@@ -21,7 +22,7 @@ def show_confirmation_modal(data):
 
     def on_confirm():
         modal.destroy()
-        save_data_and_call_script(data)  
+        reserve_tfl.continuous_reservations() 
 
     def on_cancel():
         modal.destroy()  
