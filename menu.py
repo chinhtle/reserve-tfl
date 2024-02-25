@@ -4,25 +4,25 @@ import json
 import subprocess
 import reserve_tfl
 
-# Function to save data to JSON and call another script
-def save_data_and_call_script(data):
-    with open("reservation_details.json", "w") as json_file:
+def save_data(data):
+    with open("./reservation_details.json", "w") as json_file:
         json.dump(data, json_file, indent=4)
-    subprocess.run(['python', 'path_to_second_script.py'])  # Adjust script name/path as needed
 
-# Function to show confirmation modal
+
 def show_confirmation_modal(data):
     modal = tk.Toplevel(root)
     modal.title("Confirm Details")
-    modal.geometry("400x400")  
+    modal.geometry("400x300")  
 
     # Display the data for confirmation
     for i, (key, value) in enumerate(data.items()):
         ttk.Label(modal, text=f"{key.replace('-', ' ').title()}: {value}").grid(column=0, row=i, sticky=tk.W, padx=5, pady=2)
 
     def on_confirm():
-        modal.destroy()
+        save_data(data)
+        reserve_tfl.load_configuration_from_json()
         reserve_tfl.continuous_reservations() 
+        modal.destroy()
 
     def on_cancel():
         modal.destroy()  

@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 import json
@@ -8,26 +9,19 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
-
-file_path = './reservation_details.json'
-
-# Open the JSON file and load its content into a Python dictionary
-with open(file_path, 'r') as file:
-    data = json.load(file)
-    
-# Extract variables
-RESERVATION_DAYS = data['reservation-days']
-RESERVATION_MONTH = data['reservation-month']
-RESERVATION_YEAR = data['reservation-year']
-RESERVATION_SIZE = data['reservation-size']
-TODAY_DATE = data['date-today']
-EXPERIENCE = data['experience']
-EARLIEST_TIME = data['earliest-time']
-LATEST_TIME = data['latest-time']
+# Declare variables with None to indicate that they'll be set later
+RESERVATION_DAYS = None
+RESERVATION_MONTH = None
+RESERVATION_YEAR = None
+RESERVATION_SIZE = None
+TODAY_DATE = None
+EXPERIENCE = None
+EARLIEST_TIME = None
+LATEST_TIME = None
 RESERVATION_TIME_FORMAT = "%I:%M %p"
-RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
-RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
-RESTAURANT = data['restaurant']
+RESERVATION_TIME_MIN = None
+RESERVATION_TIME_MAX = None
+RESTAURANT = None
 
 # Multithreading configurations
 NUM_THREADS = 1
@@ -52,6 +46,30 @@ EXTENSION_PATH = USER_DATA_DIR + '/' + PROFILE_DIR + '/Extensions/efohiadmkaogdh
 BROWSER_CLOSE_DELAY_SEC = 600
 
 WEBDRIVER_TIMEOUT_DELAY_MS = 120000
+
+def load_configuration_from_json():
+    file_path = './reservation_details.json'
+    global RESERVATION_DAYS, RESERVATION_MONTH, RESERVATION_YEAR, RESERVATION_SIZE
+    global TODAY_DATE, EXPERIENCE, EARLIEST_TIME, LATEST_TIME, RESERVATION_TIME_MIN, RESERVATION_TIME_MAX, RESTAURANT
+
+    # Load data from JSON file
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    
+        # Extract variables
+        RESERVATION_DAYS = data['reservation-days']
+        RESERVATION_MONTH = data['reservation-month']
+        RESERVATION_YEAR = data['reservation-year']
+        RESERVATION_SIZE = data['reservation-size']
+        TODAY_DATE = data['date-today']
+        EXPERIENCE = data['experience']
+        EARLIEST_TIME = data['earliest-time']
+        LATEST_TIME = data['latest-time']
+        RESERVATION_TIME_FORMAT = "%I:%M %p"
+        RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
+        RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
+        RESTAURANT = data['restaurant']
+    
 
 class reserveOnTock():
     def __init__(self):
@@ -155,4 +173,5 @@ def continuous_reservations():
         
 
 if __name__ == '__main__':
+    load_configuration_from_json()
     continuous_reservations()
