@@ -1,5 +1,7 @@
 import datetime
 import json
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 
 class Reservation: 
@@ -25,6 +27,9 @@ class Reservation:
         self.extension_path = self.user_data_dir + '/' + self.profile_dir + '/Extensions/efohiadmkaogdhibjbmeppjpebenaool/1.149.316_0'
         self.browser_close_delay_sec = 600
         self.webdriver_timeout_delay_ms = 120000
+        options = Options()
+        self.driver = webdriver.Chrome(options=options)
+
         
         
     def load_json(self):
